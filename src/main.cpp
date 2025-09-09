@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 		DrawFPS(20,20);
 		ClearBackground(BLACK);
 
-		window.HandleEdge();
+		window.HandleInput();
 		window.Update();
 		window.DrawGraph();
 

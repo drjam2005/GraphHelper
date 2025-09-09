@@ -2,6 +2,10 @@
 #include <raylib.h>
 
 class Renderer {
+	public:
+		void Update();
+		void DrawGraph();
+		void HandleInput();
 	private:
 		std::vector<Vertex*> vertices;
 		std::vector<Edge*> edges;
@@ -13,8 +17,4 @@ class Renderer {
 		bool isStartingEdgeDrawing = false;
 		bool isDrawingEdge = false;
 		bool isCreatingInVertex = false;
-	public:
-		void Update();
-		void DrawGraph();
-		void HandleEdge();
 };

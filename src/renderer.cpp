@@ -1,5 +1,5 @@
 #include <renderer.h>
-#include <iostream>
+#include <algorithm>
 #include <math.h>
 
 float vecDistance(const Vec2& v1, const Vec2& v2){
@@ -20,9 +20,9 @@ void Renderer::Update(){
 	for(auto vertex : vertices){
 		Vec2 tempPos = {mousePos.x, mousePos.y};
 		float distanceFromVertex = vecDistance(tempPos, vertex->pos);
-		if(distanceFromVertex < 10.0f){
+		if(distanceFromVertex < 20.0f){
 			closestVertexFromMouse = vertex;
-			DrawCircle(closestVertexFromMouse->pos.x, closestVertexFromMouse->pos.y, 15, BLUE);
+			DrawCircle(closestVertexFromMouse->pos.x, closestVertexFromMouse->pos.y, 20, BLUE);
 		}
 	}
 
@@ -34,7 +34,7 @@ void Renderer::Update(){
 		Vec2 midPoint = {(v1x+v2x)/2.0f,(v1y+v2y)/2.0f};
 
 		float distanceFromMouse = vecDistance(tempPos, midPoint);
-		if(distanceFromMouse <= 10.f){
+		if(distanceFromMouse <= 20.f){
 			closestEdgeFromMouse = edge;
 			DrawCircle(midPoint.x, midPoint.y, 15, GREEN);
 		}
@@ -55,20 +55,20 @@ void Renderer::DrawGraph(){
 		Vector2 pos1, pos2;
 		pos1 = {edge->vertex1->pos.x, edge->vertex1->pos.y};
 		pos2 = {edge->vertex2->pos.x, edge->vertex2->pos.y};
-		DrawLineEx(pos1, pos2, 2, GRAY);
+		DrawLineEx(pos1, pos2, 5, GRAY);
 	}
 
 	// Draw Vertices
 	for(auto vertex : vertices){
-		DrawCircle(vertex->pos.x, vertex->pos.y, 5, WHITE);
+		DrawCircle(vertex->pos.x, vertex->pos.y, 10, WHITE);
 	}
 	
 	// I know rendering feels backwards, but it looks better
 }
 
-void Renderer::HandleEdge(){
-	if(closestVertexFromMouse || startingEdge){
-
+void Renderer::HandleInput(){
+	// Vertex handling
+	if((closestVertexFromMouse || startingEdge) && !startingInVertex){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
 			if(!isStartingEdgeDrawing){
 				startingEdge = closestVertexFromMouse;
@@ -77,6 +77,8 @@ void Renderer::HandleEdge(){
 			if(startingEdge)
 				DrawLineEx(Vector2{startingEdge->pos.x, startingEdge->pos.y}, GetMousePosition(), 2, RED);
 			isDrawingEdge = true;
+		}else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && closestVertexFromMouse){
+			closestVertexFromMouse->pos = Vec2{GetMousePosition().x, GetMousePosition().y};
 		}
 
 		if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && isDrawingEdge){
@@ -102,20 +104,46 @@ void Renderer::HandleEdge(){
 			isStartingEdgeDrawing = false;
 			isDrawingEdge = false;
 		}
-	}else if(closestEdgeFromMouse || startingInVertex){
+	}
+
+	if((closestEdgeFromMouse || startingInVertex) && !startingEdge){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
 			if(!isCreatingInVertex){
-				std::cout << "test" << std::endl;
-				startingInVertex = new Vertex;
 				isCreatingInVertex = true;
+
+				startingInVertex = new Vertex;
+				vertices.push_back(startingInVertex);
+
+				Vertex* v1 = closestEdgeFromMouse->vertex1;
+				Vertex* v2 = closestEdgeFromMouse->vertex2;
+
+				Edge* newEdge1 = new Edge{v1, startingInVertex};
+				Edge* newEdge2 = new Edge{startingInVertex, v2};
+
+				v1->edges.push_back(newEdge1);
+				v2->edges.push_back(newEdge2);
+				edges.push_back(newEdge1);
+				edges.push_back(newEdge2);
+
+				v1->edges.erase(std::remove(v1->edges.begin(), v1->edges.end(), closestEdgeFromMouse), v1->edges.end());
+				v2->edges.erase(std::remove(v2->edges.begin(), v2->edges.end(), closestEdgeFromMouse), v2->edges.end());
+				edges.erase(std::remove(edges.begin(), edges.end(), closestEdgeFromMouse), edges.end());
+
+				startingInVertex->edges.push_back(newEdge1);
+				startingInVertex->edges.push_back(newEdge2);
+
 			}
 
 			Vector2 mousePos = GetMousePosition();
 			Vec2 tempPos = {mousePos.x, mousePos.y};
 			startingInVertex->pos = tempPos;
 
-			DrawLineEx(Vector2{startingInVertex->pos.x, startingInVertex->pos.y}, GetMousePosition(), 2, RED);
+			DrawLineEx(GetMousePosition(), Vector2{startingInVertex->pos.x, startingInVertex->pos.y}, 2, RED);
 			isCreatingInVertex = true;
+		}else if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && isCreatingInVertex){
+			startingInVertex = nullptr;
+			closestEdgeFromMouse = nullptr;
+			isCreatingInVertex = false;
 		}
 	}
 }
