@@ -1,4 +1,5 @@
 #include <renderer.h>
+#include <iostream>
 #include <algorithm>
 #include <math.h>
 
@@ -68,6 +69,38 @@ void Renderer::DrawGraph(){
 
 void Renderer::HandleInput(){
 	// Vertex handling
+	if(IsKeyPressed(KEY_D)){
+		if(closestVertexFromMouse && !closestEdgeFromMouse){
+			std::cout << "Removing Vertex!" << std::endl;
+			std::vector<Edge*> edgesToRemove;
+			for(auto& edge : edges){
+				std::cout << "removing vert" << std::endl;
+				if(edge->vertex1 == closestVertexFromMouse){
+					edge->vertex1 = nullptr;
+					edge->vertex2 = nullptr;
+					edgesToRemove.push_back(edge);
+				}
+				if(edge->vertex2 == closestVertexFromMouse){
+					edge->vertex1 = nullptr;
+					edge->vertex2 = nullptr;
+					edgesToRemove.push_back(edge);
+				}
+			}
+
+			for(Edge* edge : edgesToRemove)
+				edges.erase(std::remove(edges.begin(), edges.end(), edge), edges.end());
+			vertices.erase(std::remove(vertices.begin(), vertices.end(), closestVertexFromMouse), vertices.end());
+			return;
+		}
+
+		if(closestEdgeFromMouse && !closestVertexFromMouse){
+			closestEdgeFromMouse->vertex1->edges.erase(std::remove(closestEdgeFromMouse->vertex1->edges.begin(), closestEdgeFromMouse->vertex1->edges.end(), closestEdgeFromMouse), closestEdgeFromMouse->vertex1->edges.end());
+			closestEdgeFromMouse->vertex2->edges.erase(std::remove(closestEdgeFromMouse->vertex2->edges.begin(), closestEdgeFromMouse->vertex2->edges.end(), closestEdgeFromMouse), closestEdgeFromMouse->vertex2->edges.end());
+			edges.erase(std::remove(edges.begin(), edges.end(), closestEdgeFromMouse), edges.end());
+			return;
+		}
+		return;
+	}
 	if((closestVertexFromMouse || startingEdge) && !startingInVertex){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
 			if(!isStartingEdgeDrawing){
