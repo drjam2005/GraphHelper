@@ -7,6 +7,7 @@ class Renderer {
 		void DrawGraph();
 		void HandleInput();
 	private:
+		name_state nameState = HOVER_ONLY;
 		std::vector<Vertex*> vertices;
 		std::vector<Edge*> edges;
 		Vertex* closestVertexFromMouse = nullptr;

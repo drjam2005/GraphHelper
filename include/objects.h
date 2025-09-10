@@ -1,4 +1,12 @@
+#pragma once
 #include <vector>
+
+enum name_state {
+	HOVER_ONLY,
+	DISPLAY_ALL_VERTICES,
+	DISPLAY_ALL_EDGES,
+	DISPLAY_ALL
+};
 
 struct Vertex;
 struct Edge;

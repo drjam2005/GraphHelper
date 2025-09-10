@@ -1,6 +1,8 @@
 #include <renderer.h>
+#include <iostream>
 #include <algorithm>
 #include <math.h>
+#include <functions.h>
 
 float vecDistance(const Vec2& v1, const Vec2& v2){
     return sqrt((v2.x - v1.x) * (v2.x - v1.x) +
@@ -23,7 +25,7 @@ void Renderer::Update(){
 		if(distanceFromVertex < 20.0f){
 			closestVertexFromMouse = vertex;
 			DrawCircle(closestVertexFromMouse->pos.x, closestVertexFromMouse->pos.y, 20, BLUE);
-			DrawText(TextFormat("%d", closestVertexFromMouse->ID), closestVertexFromMouse->pos.x+10, closestVertexFromMouse->pos.y+10, 40, PURPLE);
+			DrawText(TextFormat("%d", closestVertexFromMouse->ID), closestVertexFromMouse->pos.x+10, closestVertexFromMouse->pos.y+10, 25, PURPLE);
 		}
 	}
 
@@ -38,6 +40,35 @@ void Renderer::Update(){
 		if(distanceFromMouse <= 20.f){
 			closestEdgeFromMouse = edge;
 			DrawCircle(midPoint.x, midPoint.y, 15, GREEN);
+			DrawText(TextFormat("(%d,%d)", edge->ID.first, edge->ID.second), midPoint.x+10, midPoint.y+10, 25, PURPLE);
+		}
+	}
+
+	if(nameState == DISPLAY_ALL){
+		for(auto& edge : edges){
+			float v1x = edge->vertex1->pos.x; float v2x = edge->vertex2->pos.x;
+			float v1y = edge->vertex1->pos.y; float v2y = edge->vertex2->pos.y;
+			Vec2 midPoint = {(v1x+v2x)/2.0f,(v1y+v2y)/2.0f};
+			DrawCircle(midPoint.x, midPoint.y, 10, GREEN);
+			DrawText(TextFormat("(%d,%d)", edge->ID.first, edge->ID.second), midPoint.x+10, midPoint.y+10, 40, PURPLE);
+		}
+		for(auto vertex : vertices){
+			DrawCircle(vertex->pos.x, vertex->pos.y, 13, BLUE);
+			DrawText(TextFormat("%d", vertex->ID), vertex->pos.x+10, vertex->pos.y+10, 40, PURPLE);
+		}
+	}
+	if(nameState == DISPLAY_ALL_VERTICES){
+		for(auto vertex : vertices){
+			DrawCircle(vertex->pos.x, vertex->pos.y, 13, BLUE);
+			DrawText(TextFormat("%d", vertex->ID), vertex->pos.x+10, vertex->pos.y+10, 40, PURPLE);
+		}
+	}
+	if(nameState == DISPLAY_ALL_EDGES){
+		for(auto& edge : edges){
+			float v1x = edge->vertex1->pos.x; float v2x = edge->vertex2->pos.x;
+			float v1y = edge->vertex1->pos.y; float v2y = edge->vertex2->pos.y;
+			Vec2 midPoint = {(v1x+v2x)/2.0f,(v1y+v2y)/2.0f};
+			DrawCircle(midPoint.x, midPoint.y, 10, GREEN);
 			DrawText(TextFormat("(%d,%d)", edge->ID.first, edge->ID.second), midPoint.x+10, midPoint.y+10, 40, PURPLE);
 		}
 	}
@@ -55,23 +86,50 @@ void Renderer::Update(){
 }
 
 void Renderer::DrawGraph(){
+
 	// Draw Edges
+	DrawText(TextFormat("E: "), 50, 30, 15, WHITE);
+	int yOffset = 50;
 	for(auto edge : edges){
+		DrawText(TextFormat("%d, %d", edge->ID.first, edge->ID.second), 60, yOffset, 15, WHITE);
 		Vector2 pos1, pos2;
 		pos1 = {edge->vertex1->pos.x, edge->vertex1->pos.y};
 		pos2 = {edge->vertex2->pos.x, edge->vertex2->pos.y};
 		DrawLineEx(pos1, pos2, 5, RED);
+		yOffset+=15;
 	}
 
 	// Draw Vertices
+	DrawText(TextFormat("V: "), 10, 30, 15, WHITE);
+	yOffset = 50;
 	for(auto vertex : vertices){
+		DrawText(TextFormat("%d", vertex->ID), 30, yOffset, 15, WHITE);
 		DrawCircle(vertex->pos.x, vertex->pos.y, 10, WHITE);
+		yOffset += 15;
 	}
 	
 	// I know rendering feels backwards, but it looks better
 }
 
 void Renderer::HandleInput(){
+	if(IsKeyPressed(KEY_S)){
+		std::vector<Vertex*> thing = getGeodesic({}, vertices[0], vertices[1]);
+		for(auto& ver : thing){
+			std::cout << ver->ID << std::endl;
+		}
+	}
+	if(IsKeyPressed(KEY_N)){
+		if(nameState == HOVER_ONLY){
+			nameState = DISPLAY_ALL_VERTICES;
+		}else if(nameState == DISPLAY_ALL_VERTICES){
+			nameState = DISPLAY_ALL_EDGES;
+		}else if(nameState == DISPLAY_ALL_EDGES){
+			nameState = DISPLAY_ALL;
+		}else if(nameState == DISPLAY_ALL){
+			nameState = HOVER_ONLY;
+		}
+	}
+
 	// Vertex handling
 	if(IsKeyPressed(KEY_D)){
 		if(closestVertexFromMouse && !closestEdgeFromMouse){
@@ -111,8 +169,10 @@ void Renderer::HandleInput(){
 				startingEdge = closestVertexFromMouse;
 				isStartingEdgeDrawing = true;
 			}
+
 			if(startingEdge)
 				DrawLineEx(Vector2{startingEdge->pos.x, startingEdge->pos.y}, GetMousePosition(), 2, RED);
+
 			isDrawingEdge = true;
 		}else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && closestVertexFromMouse){
 			closestVertexFromMouse->pos = Vec2{GetMousePosition().x, GetMousePosition().y};
@@ -132,14 +192,16 @@ void Renderer::HandleInput(){
 				}
 
 				Edge* newEdge = new Edge;
+				startingEdge->edges.push_back(newEdge);
+				closestVertexFromMouse->edges.push_back(newEdge);
 				newEdge->vertex1 = startingEdge;
 				newEdge->vertex2 = closestVertexFromMouse;
 				newEdge->ID = {startingEdge->ID, closestVertexFromMouse->ID};
-
 				edges.push_back(newEdge);
 			}
 
 			startingEdge = nullptr;
+			closestVertexFromMouse = nullptr;
 			isStartingEdgeDrawing = false;
 			isDrawingEdge = false;
 		}
@@ -161,9 +223,10 @@ void Renderer::HandleInput(){
 				Edge* newEdge1 = new Edge{v1, startingInVertex};
 				newEdge1->ID.first  = v1->ID;
 				newEdge1->ID.second = startingInVertex->ID;
+
 				Edge* newEdge2 = new Edge{startingInVertex, v2};
-				newEdge2->ID.first  = startingInVertex->ID;
-				newEdge2->ID.second = v2->ID;
+				newEdge2->ID.first = startingInVertex->ID;
+				newEdge2->ID.second  = v2->ID;
 
 				v1->edges.push_back(newEdge1);
 				v2->edges.push_back(newEdge2);
