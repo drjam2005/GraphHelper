@@ -10,6 +10,7 @@ class Renderer {
 		name_state nameState = HOVER_ONLY;
 		std::vector<Vertex*> vertices;
 		std::vector<Edge*> edges;
+		std::vector<Vertex*> toHighlight = {};
 		Vertex* closestVertexFromMouse = nullptr;
 		Edge* closestEdgeFromMouse = nullptr;
 		Vertex* startingEdge = nullptr;

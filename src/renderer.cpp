@@ -1,5 +1,4 @@
 #include <renderer.h>
-#include <iostream>
 #include <algorithm>
 #include <math.h>
 #include <functions.h>
@@ -12,6 +11,17 @@ float vecDistance(const Vec2& v1, const Vec2& v2){
 
 float verDistance(Vertex& v1, Vertex& v2){
 	return vecDistance(v1.pos, v2.pos);
+}
+
+void DrawEdgeFromVert(Vertex* v1, Vertex* v2){
+	for(auto& edge : v1->edges){
+		if(edge->vertex1 == v2 || edge->vertex2 == v2){
+			Vector2 pos1, pos2;
+			pos1 = {edge->vertex1->pos.x, edge->vertex1->pos.y};
+			pos2 = {edge->vertex2->pos.x, edge->vertex2->pos.y};
+			DrawLineEx(pos1, pos2, 10, BLUE);
+		}
+	}
 }
 
 void Renderer::Update(){
@@ -98,6 +108,11 @@ void Renderer::DrawGraph(){
 		DrawLineEx(pos1, pos2, 5, RED);
 		yOffset+=15;
 	}
+	if(toHighlight.size() > 0){
+		for(size_t i = 0; i < toHighlight.size()-1; ++i){
+			DrawEdgeFromVert(toHighlight[i], toHighlight[i+1]);
+		}
+	}
 
 	// Draw Vertices
 	DrawText(TextFormat("V: "), 10, 30, 15, WHITE);
@@ -107,15 +122,24 @@ void Renderer::DrawGraph(){
 		DrawCircle(vertex->pos.x, vertex->pos.y, 10, WHITE);
 		yOffset += 15;
 	}
-	
+
+
 	// I know rendering feels backwards, but it looks better
 }
 
 void Renderer::HandleInput(){
 	if(IsKeyPressed(KEY_S)){
-		std::vector<Vertex*> thing = getGeodesic({}, vertices[0], vertices[1]);
-		for(auto& ver : thing){
-			std::cout << ver->ID << std::endl;
+		toHighlight = getShortestPath({}, vertices[0], vertices[1]);
+	}
+	if(IsKeyPressed(KEY_G)){
+		toHighlight = getShortestPath({}, vertices[0], vertices[1]);
+		for(size_t i = 0; i < vertices.size(); ++i){
+			for(size_t j = 0; j < vertices.size(); ++j){
+				std::vector<Vertex*> temp = getShortestPath({}, vertices[i], vertices[j]);
+				if(temp.size() > toHighlight.size()){
+					toHighlight = temp;
+				}
+			}
 		}
 	}
 	if(IsKeyPressed(KEY_N)){
@@ -132,6 +156,7 @@ void Renderer::HandleInput(){
 
 	// Vertex handling
 	if(IsKeyPressed(KEY_D)){
+		toHighlight = {};
 		if(closestVertexFromMouse && !closestEdgeFromMouse){
 			std::vector<Edge*> edgesToRemove;
 			for(auto& edge : edges){
@@ -147,8 +172,18 @@ void Renderer::HandleInput(){
 				}
 			}
 
-			for(Edge* edge : edgesToRemove)
+			for(Edge* edge : edgesToRemove){
+				for(Vertex* ver : vertices){
+					for(Edge* verEdge : ver->edges){
+						if(verEdge == edge){
+							ver->edges.erase(std::remove(ver->edges.begin(), ver->edges.end(), edge), ver->edges.end());
+							break;
+						}
+					}
+				}
 				edges.erase(std::remove(edges.begin(), edges.end(), edge), edges.end());
+			}
+
 			vertices.erase(std::remove(vertices.begin(), vertices.end(), closestVertexFromMouse), vertices.end());
 			return;
 		}
@@ -165,6 +200,7 @@ void Renderer::HandleInput(){
 	// Mouse input
 	if((closestVertexFromMouse || startingEdge) && !startingInVertex){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+			toHighlight = {};
 			if(!isStartingEdgeDrawing){
 				startingEdge = closestVertexFromMouse;
 				isStartingEdgeDrawing = true;
@@ -209,6 +245,7 @@ void Renderer::HandleInput(){
 
 	if((closestEdgeFromMouse || startingInVertex) && !startingEdge){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+			toHighlight = {};
 			if(!isCreatingInVertex){
 				isCreatingInVertex = true;
 
@@ -248,6 +285,7 @@ void Renderer::HandleInput(){
 
 			DrawLineEx(GetMousePosition(), Vector2{startingInVertex->pos.x, startingInVertex->pos.y}, 2, RED);
 			isCreatingInVertex = true;
+			closestEdgeFromMouse = nullptr;
 		}else if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && isCreatingInVertex){
 			startingInVertex = nullptr;
 			closestEdgeFromMouse = nullptr;
