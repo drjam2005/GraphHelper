@@ -96,7 +96,6 @@ void Renderer::Update(){
 }
 
 void Renderer::DrawGraph(){
-
 	// Draw Edges
 	DrawText(TextFormat("E: "), 50, 30, 15, WHITE);
 	int yOffset = 50;
@@ -108,10 +107,17 @@ void Renderer::DrawGraph(){
 		DrawLineEx(pos1, pos2, 5, RED);
 		yOffset+=15;
 	}
+
+	// Highlighted stuff
 	if(toHighlight.size() > 0){
+		int xOffset = 50;
+		DrawText(TextFormat("Highlighted Path: "), 10, 470, 20, WHITE);
 		for(size_t i = 0; i < toHighlight.size()-1; ++i){
 			DrawEdgeFromVert(toHighlight[i], toHighlight[i+1]);
+			DrawText(TextFormat("%d,",toHighlight[i]->ID ), xOffset, 500, 20, WHITE);
+			xOffset+=19;
 		}
+		DrawText(TextFormat("%d",toHighlight[toHighlight.size()-1]->ID ), xOffset, 500, 20, WHITE);
 	}
 
 	// Draw Vertices
@@ -122,7 +128,6 @@ void Renderer::DrawGraph(){
 		DrawCircle(vertex->pos.x, vertex->pos.y, 10, WHITE);
 		yOffset += 15;
 	}
-
 
 	// I know rendering feels backwards, but it looks better
 }
@@ -135,6 +140,7 @@ void Renderer::HandleInput(){
 		toHighlight = getShortestPath({}, vertices[0], vertices[1]);
 		for(size_t i = 0; i < vertices.size(); ++i){
 			for(size_t j = 0; j < vertices.size(); ++j){
+				if(i == j) continue;
 				std::vector<Vertex*> temp = getShortestPath({}, vertices[i], vertices[j]);
 				if(temp.size() > toHighlight.size()){
 					toHighlight = temp;

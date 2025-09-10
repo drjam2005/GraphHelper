@@ -23,8 +23,7 @@ bool isInVec(Edge* edge, std::vector<Edge*> list){
 	return false;
 }
 
-
-std::vector<Vertex*> getShortestPath(std::vector<Vertex*> passed, Vertex* v1, Vertex* v2){
+std::vector<Vertex*> getShortestPath(std::vector<Vertex*> passed, Vertex* v1, Vertex* v2) {
     if (v1 == v2) {
         passed.push_back(v2);
         return passed;
@@ -32,40 +31,28 @@ std::vector<Vertex*> getShortestPath(std::vector<Vertex*> passed, Vertex* v1, Ve
     if (v1->edges.empty()) {
         return {};
     }
-
-    std::vector<std::vector<Vertex*>> smallest;
+    std::vector<std::vector<Vertex*>> candidates;
     passed.push_back(v1);
 
     for (auto& edge : v1->edges) {
-        if (edge->vertex1 == v1) {
-            if (!isInVec(edge->vertex2, passed)) {
-                auto branchPassed = passed; // 👈 copy here
-                std::vector<Vertex*> thing = getShortestPath(branchPassed, edge->vertex2, v2);
-                smallest.push_back(thing);
-            }
-        }
-
-        if (edge->vertex2 == v1) {
-            if (!isInVec(edge->vertex1, passed)) {
-                auto branchPassed = passed; // 👈 copy here
-                std::vector<Vertex*> thing = getShortestPath(branchPassed, edge->vertex1, v2);
-                smallest.push_back(thing);
+        Vertex* next = (edge->vertex1 == v1 ? edge->vertex2 : edge->vertex1);
+        if (!isInVec(next, passed)) {
+            auto path = getShortestPath(passed, next, v2);
+            if (!path.empty()) {
+                candidates.push_back(path);
             }
         }
     }
 
-    if (!smallest.size())
+    if (candidates.empty())
         return {};
 
-    std::vector<Vertex*> smallestPath = smallest[0];
-    for (auto& vec : smallest) {
-        if (vec.size() < smallestPath.size() && vec.size() != 0) {
-            smallestPath = vec;
+    auto best = candidates[0];
+    for (auto& c : candidates) {
+        if (!c.empty() && c.size() < best.size()) {
+            best = c;
         }
     }
-
-    if (smallestPath.size())
-        return smallestPath;
-    return {};
+    return best;
 }
 
