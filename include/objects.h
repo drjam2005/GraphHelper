@@ -10,9 +10,11 @@ struct Vec2 {
 struct Vertex {
 	Vec2 pos;
 	std::vector<Edge*> edges;
+	int ID = 0;
 };
 
 struct Edge {
 	Vertex* vertex1;
 	Vertex* vertex2;
+	std::pair<int, int> ID;
 };

@@ -17,4 +17,5 @@ class Renderer {
 		bool isStartingEdgeDrawing = false;
 		bool isDrawingEdge = false;
 		bool isCreatingInVertex = false;
+		bool isPlacing = false;
 };

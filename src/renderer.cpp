@@ -1,5 +1,4 @@
 #include <renderer.h>
-#include <iostream>
 #include <algorithm>
 #include <math.h>
 
@@ -24,6 +23,7 @@ void Renderer::Update(){
 		if(distanceFromVertex < 20.0f){
 			closestVertexFromMouse = vertex;
 			DrawCircle(closestVertexFromMouse->pos.x, closestVertexFromMouse->pos.y, 20, BLUE);
+			DrawText(TextFormat("%d", closestVertexFromMouse->ID), closestVertexFromMouse->pos.x+10, closestVertexFromMouse->pos.y+10, 40, PURPLE);
 		}
 	}
 
@@ -38,25 +38,29 @@ void Renderer::Update(){
 		if(distanceFromMouse <= 20.f){
 			closestEdgeFromMouse = edge;
 			DrawCircle(midPoint.x, midPoint.y, 15, GREEN);
+			DrawText(TextFormat("(%d,%d)", edge->ID.first, edge->ID.second), midPoint.x+10, midPoint.y+10, 40, PURPLE);
 		}
 	}
 
 	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && closestVertexFromMouse == nullptr && closestEdgeFromMouse == nullptr){
+		int latestID = 0;
+		if(vertices.size())
+			latestID = vertices[vertices.size()-1]->ID;
 		Vertex* newVertex = new Vertex;
 		newVertex->pos.x = mousePos.x;
 		newVertex->pos.y = mousePos.y;
+		newVertex->ID = latestID + 1;
 		vertices.push_back(newVertex);
 	}
 }
 
 void Renderer::DrawGraph(){
-
 	// Draw Edges
 	for(auto edge : edges){
 		Vector2 pos1, pos2;
 		pos1 = {edge->vertex1->pos.x, edge->vertex1->pos.y};
 		pos2 = {edge->vertex2->pos.x, edge->vertex2->pos.y};
-		DrawLineEx(pos1, pos2, 5, GRAY);
+		DrawLineEx(pos1, pos2, 5, RED);
 	}
 
 	// Draw Vertices
@@ -71,10 +75,8 @@ void Renderer::HandleInput(){
 	// Vertex handling
 	if(IsKeyPressed(KEY_D)){
 		if(closestVertexFromMouse && !closestEdgeFromMouse){
-			std::cout << "Removing Vertex!" << std::endl;
 			std::vector<Edge*> edgesToRemove;
 			for(auto& edge : edges){
-				std::cout << "removing vert" << std::endl;
 				if(edge->vertex1 == closestVertexFromMouse){
 					edge->vertex1 = nullptr;
 					edge->vertex2 = nullptr;
@@ -101,6 +103,8 @@ void Renderer::HandleInput(){
 		}
 		return;
 	}
+
+	// Mouse input
 	if((closestVertexFromMouse || startingEdge) && !startingInVertex){
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
 			if(!isStartingEdgeDrawing){
@@ -121,6 +125,7 @@ void Renderer::HandleInput(){
 					if((edge->vertex1 == startingEdge && edge->vertex2 == closestVertexFromMouse) ||
 					   (edge->vertex1 == closestVertexFromMouse && edge->vertex2 == startingEdge)){
 						isDrawingEdge = false;
+						isStartingEdgeDrawing = false;
 						startingEdge = nullptr;
 						return;
 					}
@@ -129,6 +134,7 @@ void Renderer::HandleInput(){
 				Edge* newEdge = new Edge;
 				newEdge->vertex1 = startingEdge;
 				newEdge->vertex2 = closestVertexFromMouse;
+				newEdge->ID = {startingEdge->ID, closestVertexFromMouse->ID};
 
 				edges.push_back(newEdge);
 			}
@@ -145,13 +151,19 @@ void Renderer::HandleInput(){
 				isCreatingInVertex = true;
 
 				startingInVertex = new Vertex;
+				int latestID = vertices[vertices.size()-1]->ID;
+				startingInVertex->ID = latestID + 1;
 				vertices.push_back(startingInVertex);
 
 				Vertex* v1 = closestEdgeFromMouse->vertex1;
 				Vertex* v2 = closestEdgeFromMouse->vertex2;
 
 				Edge* newEdge1 = new Edge{v1, startingInVertex};
+				newEdge1->ID.first  = v1->ID;
+				newEdge1->ID.second = startingInVertex->ID;
 				Edge* newEdge2 = new Edge{startingInVertex, v2};
+				newEdge2->ID.first  = startingInVertex->ID;
+				newEdge2->ID.second = v2->ID;
 
 				v1->edges.push_back(newEdge1);
 				v2->edges.push_back(newEdge2);
