@@ -133,15 +133,16 @@ void Renderer::DrawGraph(){
 }
 
 void Renderer::HandleInput(){
+	std::vector<Vertex*> vert;
 	if(IsKeyPressed(KEY_S)){
-		toHighlight = getShortestPath({}, vertices[0], vertices[1]);
+		toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
 	}
 	if(IsKeyPressed(KEY_G)){
-		toHighlight = getShortestPath({}, vertices[0], vertices[1]);
+		toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
 		for(size_t i = 0; i < vertices.size(); ++i){
 			for(size_t j = 0; j < vertices.size(); ++j){
 				if(i == j) continue;
-				std::vector<Vertex*> temp = getShortestPath({}, vertices[i], vertices[j]);
+				std::vector<Vertex*> temp = getShortestPath(vert, vertices[i], vertices[j]);
 				if(temp.size() > toHighlight.size()){
 					toHighlight = temp;
 				}
