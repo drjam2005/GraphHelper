@@ -1,4 +1,5 @@
 #include <renderer.h>
+#include <iostream>
 #include <algorithm>
 #include <math.h>
 #include <functions.h>
@@ -7,7 +8,6 @@ float vecDistance(const Vec2& v1, const Vec2& v2){
     return sqrt((v2.x - v1.x) * (v2.x - v1.x) +
                 (v2.y - v1.y) * (v2.y - v1.y));
 }
-
 
 float verDistance(Vertex& v1, Vertex& v2){
 	return vecDistance(v1.pos, v2.pos);
@@ -105,6 +105,12 @@ void Renderer::DrawGraph(){
 		pos1 = {edge->vertex1->pos.x, edge->vertex1->pos.y};
 		pos2 = {edge->vertex2->pos.x, edge->vertex2->pos.y};
 		DrawLineEx(pos1, pos2, 5, RED);
+
+        float v1x = edge->vertex1->pos.x; float v2x = edge->vertex2->pos.x;
+        float v1y = edge->vertex1->pos.y; float v2y = edge->vertex2->pos.y;
+
+        Vec2 midPoint = {(v1x+v2x)/2.0f,(v1y+v2y)/2.0f};
+        DrawText(TextFormat("%.0f", edge->distance), midPoint.x, midPoint.y-25, 30, WHITE);
 		yOffset+=15;
 	}
 
@@ -138,16 +144,24 @@ void Renderer::HandleInput(){
 		toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
 	}
 	if(IsKeyPressed(KEY_G)){
-		toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
-		for(size_t i = 0; i < vertices.size(); ++i){
-			for(size_t j = 0; j < vertices.size(); ++j){
-				if(i == j) continue;
-				std::vector<Vertex*> temp = getShortestPath(vert, vertices[i], vertices[j]);
-				if(temp.size() > toHighlight.size()){
-					toHighlight = temp;
-				}
-			}
-		}
+        Vertex* temp = closestVertexFromMouse;
+std::map<Vertex*, std::pair<double, Vertex*>> res = Dijkstras(vertices, temp);
+        for(auto& v : res){
+            if(v.second.second == nullptr)
+                continue;
+            std::cout << v.first->ID << " " << v.second.first << " " << v.second.second->ID << '\n';
+        }
+
+		//toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
+		//for(size_t i = 0; i < vertices.size(); ++i){
+		//	for(size_t j = 0; j < vertices.size(); ++j){
+		//		if(i == j) continue;
+		//		std::vector<Vertex*> temp = getShortestPath(vert, vertices[i], vertices[j]);
+		//		if(temp.size() > toHighlight.size()){
+		//			toHighlight = temp;
+		//		}
+		//	}
+		//}
 	}
 	if(IsKeyPressed(KEY_N)){
 		if(nameState == HOVER_ONLY){
@@ -219,6 +233,9 @@ void Renderer::HandleInput(){
 			isDrawingEdge = true;
 		}else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && closestVertexFromMouse){
 			closestVertexFromMouse->pos = Vec2{GetMousePosition().x, GetMousePosition().y};
+            for(auto& e : closestVertexFromMouse->edges){
+                e->distance = int(round(verDistance(*e->vertex1, *e->vertex2)) / 20);
+            }
 		}
 
 		if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && isDrawingEdge){
@@ -240,6 +257,7 @@ void Renderer::HandleInput(){
 				newEdge->vertex1 = startingEdge;
 				newEdge->vertex2 = closestVertexFromMouse;
 				newEdge->ID = {startingEdge->ID, closestVertexFromMouse->ID};
+                newEdge->distance = int(round(verDistance(*startingEdge, *closestVertexFromMouse)) / 20);
 				edges.push_back(newEdge);
 			}
 
@@ -257,6 +275,9 @@ void Renderer::HandleInput(){
 				isCreatingInVertex = true;
 
 				startingInVertex = new Vertex;
+                Vector2 mousePos = GetMousePosition();
+                Vec2 tempPos = {mousePos.x, mousePos.y};
+                startingInVertex->pos = tempPos;
 				int latestID = vertices[vertices.size()-1]->ID;
 				startingInVertex->ID = latestID + 1;
 				vertices.push_back(startingInVertex);
@@ -267,10 +288,15 @@ void Renderer::HandleInput(){
 				Edge* newEdge1 = new Edge{v1, startingInVertex};
 				newEdge1->ID.first  = v1->ID;
 				newEdge1->ID.second = startingInVertex->ID;
+                newEdge1->distance = int(round(verDistance(*v1, *startingInVertex)) / 20);
 
 				Edge* newEdge2 = new Edge{startingInVertex, v2};
 				newEdge2->ID.first = startingInVertex->ID;
 				newEdge2->ID.second  = v2->ID;
+                newEdge2->distance = int(round(verDistance(*v2, *startingInVertex)) / 20);
+
+                tempEdge1 = newEdge1;
+                tempEdge2 = newEdge2;
 
 				v1->edges.push_back(newEdge1);
 				v2->edges.push_back(newEdge2);
@@ -291,12 +317,19 @@ void Renderer::HandleInput(){
 			startingInVertex->pos = tempPos;
 
 			DrawLineEx(GetMousePosition(), Vector2{startingInVertex->pos.x, startingInVertex->pos.y}, 2, RED);
+            if (tempEdge1)
+                tempEdge1->distance = (int)round(verDistance(*tempEdge1->vertex1, *tempEdge1->vertex2) / 20);
+            if (tempEdge2)
+                tempEdge2->distance = (int)round(verDistance(*tempEdge2->vertex1, *tempEdge2->vertex2) / 20);
+
 			isCreatingInVertex = true;
 			closestEdgeFromMouse = nullptr;
 		}else if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && isCreatingInVertex){
 			startingInVertex = nullptr;
 			closestEdgeFromMouse = nullptr;
 			isCreatingInVertex = false;
+            tempEdge1 = nullptr;
+            tempEdge2 = nullptr;
 		}
 	}
 }

@@ -3,7 +3,7 @@ project(
   'cpp',
   version : '0.1',
   meson_version : '>= 1.3.0',
-  default_options : ['warning_level=3', 'cpp_std=c++14'],
+  default_options : ['warning_level=0', 'cpp_std=c++17'],
 )
 add_project_arguments('-g', language: 'cpp')
 
@@ -14,7 +14,8 @@ dependencies = [
 
 src = [
   'src/main.cpp',
-  'src/renderer.cpp'
+  'src/renderer.cpp',
+  'src/functions.cpp'
 ]
 
 includeDirs = include_directories('include')

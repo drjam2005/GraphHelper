@@ -25,4 +25,5 @@ struct Edge {
 	Vertex* vertex1;
 	Vertex* vertex2;
 	std::pair<int, int> ID;
+    float distance;
 };

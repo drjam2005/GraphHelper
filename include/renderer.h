@@ -15,6 +15,8 @@ class Renderer {
 		Edge* closestEdgeFromMouse = nullptr;
 		Vertex* startingEdge = nullptr;
 		Vertex* startingInVertex = nullptr;
+        Edge* tempEdge1 = nullptr;
+        Edge* tempEdge2 = nullptr;
 		Vertex* inVertex = nullptr;
 		bool isStartingEdgeDrawing = false;
 		bool isDrawingEdge = false;
