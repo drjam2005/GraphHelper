@@ -114,11 +114,13 @@ std::map<Vertex*, std::pair<double, Vertex*>> Dijkstras(std::vector<Vertex*> ver
             continue;
 
         for (Edge* e : curr->edges) {
-            Vertex* neighbor =
-                (e->vertex1 == curr ? e->vertex2 : e->vertex1);
+            Vertex* neighbor;
+            if(e->vertex1 == curr)
+                neighbor = e->vertex2;
+            else
+                neighbor = e->vertex1;
 
             double newDist = currDist + e->distance;
-
             if (newDist < table[neighbor].first) {
                 table[neighbor].first = newDist;
                 table[neighbor].second = curr;
