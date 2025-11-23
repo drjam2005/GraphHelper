@@ -1,4 +1,5 @@
 #include <renderer.h>
+#include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <math.h>
@@ -129,7 +130,16 @@ void Renderer::DrawGraph(){
 	// Draw Vertices
 	DrawText(TextFormat("V: "), 10, 30, 15, WHITE);
 	yOffset = 50;
-	for(auto vertex : vertices){
+    if(start){
+        DrawCircle(start->pos.x, start->pos.y, 15, GREEN);
+		DrawText("start", start->pos.x, start->pos.y-35, 25, WHITE);
+    }
+    if(end){
+        DrawCircle(end->pos.x, end->pos.y, 15, RED);
+		DrawText("end", end->pos.x, end->pos.y-35, 25, WHITE);
+    }
+
+    for(auto vertex : vertices){
 		DrawText(TextFormat("%d", vertex->ID), 30, yOffset, 15, WHITE);
 		DrawCircle(vertex->pos.x, vertex->pos.y, 10, WHITE);
 		yOffset += 15;
@@ -141,27 +151,80 @@ void Renderer::DrawGraph(){
 void Renderer::HandleInput(){
 	std::vector<Vertex*> vert;
 	if(IsKeyPressed(KEY_S)){
-		toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
+        start = closestVertexFromMouse;
 	}
+    if(IsKeyPressed(KEY_E)){
+        end = closestVertexFromMouse;
+    }
 	if(IsKeyPressed(KEY_G)){
-        Vertex* temp = closestVertexFromMouse;
-std::map<Vertex*, std::pair<double, Vertex*>> res = Dijkstras(vertices, temp);
-        for(auto& v : res){
-            if(v.second.second == nullptr)
-                continue;
-            std::cout << v.first->ID << " " << v.second.first << " " << v.second.second->ID << '\n';
-        }
+        toHighlight.clear();
+        if(start && end){
+            Vertex* temp = start;
+            std::map<Vertex*, std::pair<double, Vertex*>> res = Dijkstras(vertices, temp);
+            std::cout << "------------------------------------------\n";
+            std::cout << std::left
+                      << std::setw(10) << "Vertex"
+                      << std::setw(17) << "Dist From Source"
+                      << std::setw(15) << "Predecessor" 
+                      << '\n';
 
-		//toHighlight = getShortestPath(vert, vertices[0], vertices[1]);
-		//for(size_t i = 0; i < vertices.size(); ++i){
-		//	for(size_t j = 0; j < vertices.size(); ++j){
-		//		if(i == j) continue;
-		//		std::vector<Vertex*> temp = getShortestPath(vert, vertices[i], vertices[j]);
-		//		if(temp.size() > toHighlight.size()){
-		//			toHighlight = temp;
-		//		}
-		//	}
-		//}
+            std::cout << std::setw(10) << start->ID
+                      << std::setw(17) << 0.0
+                      << std::setw(15) << "None"
+                      << '\n';
+
+            for(auto& v : res){
+                if(v.second.second == nullptr)
+                    continue;
+                std::cout << std::setw(10) << v.first->ID
+                          << std::setw(17) << v.second.first
+                          << std::setw(15) << v.second.second->ID
+                          << '\n';
+            }
+
+            std::vector<Vertex*> toH;
+            Vertex* tmp = end;
+
+            while(tmp != nullptr){
+                toH.push_back(tmp);
+                if(tmp == start) break;
+                tmp = res[tmp].second;
+            }
+
+            if(toH.back() != start){
+                std::cout << "------------------------------------------\n";
+                std::cout << "No path found from start to end!" << std::endl;
+                toH.clear();
+            } else {
+                std::reverse(toH.begin(), toH.end());
+                toHighlight = toH;
+            }
+        }else{
+            Vertex* temp = closestVertexFromMouse;
+            std::map<Vertex*, std::pair<double, Vertex*>> res = Dijkstras(vertices, temp);
+            std::cout << "------------------------------------------\n";
+            std::cout << std::left
+                      << std::setw(10) << "Vertex"
+                      << std::setw(17) << "Dist From Source"
+                      << std::setw(15) << "Predecessor" 
+                      << '\n';
+
+            std::cout << std::setw(10) << temp->ID
+                      << std::setw(17) << 0.0
+                      << std::setw(15) << "None"
+                      << '\n';
+
+            for(auto& v : res){
+                if(v.second.second == nullptr)
+                    continue;
+                std::cout << std::setw(10) << v.first->ID
+                          << std::setw(17) << v.second.first
+                          << std::setw(15) << v.second.second->ID
+                          << '\n';
+            }
+
+        }
+        start = nullptr; end = nullptr;
 	}
 	if(IsKeyPressed(KEY_N)){
 		if(nameState == HOVER_ONLY){
@@ -177,6 +240,8 @@ std::map<Vertex*, std::pair<double, Vertex*>> res = Dijkstras(vertices, temp);
 
 	// Vertex handling
 	if(IsKeyPressed(KEY_D)){
+        start = nullptr;
+        end = nullptr;
 		toHighlight = {};
 		if(closestVertexFromMouse && !closestEdgeFromMouse){
 			std::vector<Edge*> edgesToRemove;
